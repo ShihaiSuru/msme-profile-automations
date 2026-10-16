@@ -2,34 +2,34 @@ name: Daily MSME Fintech Repo Creator
 
 on:
   schedule:
-    - cron: '30 4 * * *'  # Daily 10:00 AM IST
+    - cron: '30 4 * * *'
   workflow_dispatch:
 
 jobs:
   create-and-seed:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate name and idea
+      - name: Generate
         id: gen
         run: |
           DATE=$(date +%Y%m%d)
           DAY=$(date +%j)
           echo "repo_name=msme-fintech-${DATE}" >> $GITHUB_OUTPUT
-          IDEAS=("Cash flow forecasting script" "Invoice aging analyzer" "GST compliance checklist" "UPI reconciliation helper" "Grant eligibility checker" "Payment delay calculator" "Working capital estimator")
+          IDEAS=("Cash flow forecasting" "Invoice aging analyzer" "GST checklist" "UPI reconciler" "Grant checker" "Delay calculator")
           echo "idea=${IDEAS[$((DAY % ${#IDEAS[@]}))]}" >> $GITHUB_OUTPUT
 
-      - name: Create repository
+      - name: Create repo
         env:
           GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
           REPO_NAME: ${{ steps.gen.outputs.repo_name }}
           IDEA: ${{ steps.gen.outputs.idea }}
-        run: |
-          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/user/repos -d "{\"name\":\"$REPO_NAME\",\"description\":\"$IDEA\",\"private\":false,\"auto_init\":true}"
+        run: curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/user/repos -d "{\"name\":\"$REPO_NAME\",\"description\":\"$IDEA\",\"private\":false,\"auto_init\":true}"
 
-      - name: Add starter Python script
+      - name: Add tool.py
         env:
           GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
           REPO_NAME: ${{ steps.gen.outputs.repo_name }}
           IDEA: ${{ steps.gen.outputs.idea }}
         run: |
-          SCRIPT='print("MSME Fintech Tool")\nprint("Idea: '
+          BODY='{"message":"Add starter tool","content":"'$(echo 'print("MSME Tool: '$IDEA'")' | base64 -w 0)'"}'
+          curl -s -X PUT -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/ShihaiSuru/$REPO_NAME/contents/tool.py -d "$BODY"
