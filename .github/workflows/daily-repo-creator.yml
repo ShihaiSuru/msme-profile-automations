@@ -2,34 +2,21 @@ name: Daily MSME Fintech Repo Creator
 
 on:
   schedule:
-    # Every day at 04:30 UTC (10:00 AM IST)
-    - cron: '30 4 * * *'
+    - cron: '30 4 * * *'  # Daily 10:00 AM IST
   workflow_dispatch:
 
 jobs:
   create-and-seed:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate unique idea and repo name
+      - name: Generate name and idea
         id: gen
         run: |
           DATE=$(date +%Y%m%d)
           DAY=$(date +%j)
-          REPO_NAME="msme-fintech-${DATE}"
-          echo "repo_name=${REPO_NAME}" >> $GITHUB_OUTPUT
-
-          IDEAS=(
-            "Cash flow forecasting script for MSMEs"
-            "Invoice aging analyzer tool"
-            "GST compliance checklist generator"
-            "UPI payment reconciliation helper"
-            "MSME grant eligibility checker"
-            "Payment delay risk calculator"
-            "Working capital requirement estimator"
-            "Simple receivables dashboard generator"
-          )
-          IDEA=${IDEAS[$((DAY % ${#IDEAS[@]}))]}
-          echo "idea=${IDEA}" >> $GITHUB_OUTPUT
+          echo "repo_name=msme-fintech-${DATE}" >> $GITHUB_OUTPUT
+          IDEAS=("Cash flow forecasting script" "Invoice aging analyzer" "GST compliance checklist" "UPI reconciliation helper" "Grant eligibility checker" "Payment delay calculator" "Working capital estimator")
+          echo "idea=${IDEAS[$((DAY % ${#IDEAS[@]}))]}" >> $GITHUB_OUTPUT
 
       - name: Create repository
         env:
@@ -37,22 +24,12 @@ jobs:
           REPO_NAME: ${{ steps.gen.outputs.repo_name }}
           IDEA: ${{ steps.gen.outputs.idea }}
         run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/user/repos \
-            -d "{\"name\":\"${REPO_NAME}\",\"description\":\"${IDEA}\",\"private\":false,\"auto_init\":true}"
-          echo "Created ${REPO_NAME}"
+          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/user/repos -d "{\"name\":\"$REPO_NAME\",\"description\":\"$IDEA\",\"private\":false,\"auto_init\":true}"
 
-      - name: Add starter Python tool
+      - name: Add starter Python script
         env:
           GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
           REPO_NAME: ${{ steps.gen.outputs.repo_name }}
           IDEA: ${{ steps.gen.outputs.idea }}
         run: |
-          # Base64-encoded simple starter script
-          CONTENT=$(echo '#!/usr/bin/env python3
-"""
-MSME Fintech Tool - Auto-generated
-Idea: '
+          SCRIPT='print("MSME Fintech Tool")\nprint("Idea: '
