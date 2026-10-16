@@ -1,0 +1,47 @@
+name: Weekly MSME Fintech Repo Creator
+
+on:
+  schedule:
+    # Every Monday at 04:30 UTC (10:00 AM IST)
+    - cron: '30 4 * * 1'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate unique repo name and content
+        id: generate
+        run: |
+          DATE=$(date +%Y%m%d)
+          WEEK=$(date +%U)
+          REPO_NAME="msme-fintech-tool-${DATE}"
+          echo "repo_name=${REPO_NAME}" >> $GITHUB_OUTPUT
+          
+          # Simple rotating ideas
+          IDEAS=(
+            "Cash flow forecasting helper for MSMEs"
+            "Invoice aging analyzer"
+            "GST compliance checklist generator"
+            "UPI reconciliation script"
+            "MSME grant eligibility checker"
+            "Payment delay data analysis"
+          )
+          IDEA=${IDEAS[$((WEEK % ${#IDEAS[@]}))]}
+          echo "idea=${IDEA}" >> $GITHUB_OUTPUT
+
+      - name: Create repository via GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
+          REPO_NAME: ${{ steps.generate.outputs.repo_name }}
+          IDEA: ${{ steps.generate.outputs.idea }}
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/user/repos \
+            -d "{\"name\":\"${REPO_NAME}\",\"description\":\"${IDEA} - Auto-generated weekly tool for Indian MSME fintech profile\",\"private\":false,\"auto_init\":true}"
+
+      - name: Confirm creation
+        run: echo "Created repository: ${{ steps.generate.outputs.repo_name }}"
