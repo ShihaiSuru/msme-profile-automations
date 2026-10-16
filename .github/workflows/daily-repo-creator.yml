@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-repo:
+  create-and-seed:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate unique idea and name
-        id: generate
+      - name: Generate unique idea and repo name
+        id: gen
         run: |
           DATE=$(date +%Y%m%d)
           DAY=$(date +%j)
@@ -32,27 +32,27 @@ jobs:
           echo "idea=${IDEA}" >> $GITHUB_OUTPUT
 
       - name: Create repository
-        id: create
         env:
           GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
-          REPO_NAME: ${{ steps.generate.outputs.repo_name }}
-          IDEA: ${{ steps.generate.outputs.idea }}
+          REPO_NAME: ${{ steps.gen.outputs.repo_name }}
+          IDEA: ${{ steps.gen.outputs.idea }}
         run: |
-          RESPONSE=$(curl -s -X POST \
+          curl -s -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/user/repos \
-            -d "{\"name\":\"${REPO_NAME}\",\"description\":\"${IDEA}\",\"private\":false,\"auto_init\":true}")
-          echo "$RESPONSE"
-          echo "Created: ${REPO_NAME}"
+            -d "{\"name\":\"${REPO_NAME}\",\"description\":\"${IDEA}\",\"private\":false,\"auto_init\":true}"
+          echo "Created ${REPO_NAME}"
 
-      - name: Add starter Python script
+      - name: Add starter Python tool
         env:
           GH_TOKEN: ${{ secrets.REPO_CREATOR_TOKEN }}
-          REPO_NAME: ${{ steps.generate.outputs.repo_name }}
-          IDEA: ${{ steps.generate.outputs.idea }}
+          REPO_NAME: ${{ steps.gen.outputs.repo_name }}
+          IDEA: ${{ steps.gen.outputs.idea }}
         run: |
-          SCRIPT='#!/usr/bin/env python3
+          # Base64-encoded simple starter script
+          CONTENT=$(echo '#!/usr/bin/env python3
 """
-'
+MSME Fintech Tool - Auto-generated
+Idea: '
